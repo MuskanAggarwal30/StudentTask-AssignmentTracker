@@ -76,6 +76,6 @@ vi. Recurring tasks
 vii. Mobile application
 viii. Personalized productivity reports
 
-## 📌Project Status
-# 🚧 Under Development
+# 📌Project Status
+## 🚧 Under Development
 This project is being developed as part of the Software Engineering course.
