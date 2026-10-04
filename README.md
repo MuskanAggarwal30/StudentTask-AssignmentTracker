@@ -1,59 +1,116 @@
-# TaskNest — Student Task & Assignment Tracker
+# TaskNest: Student Task & Assignment Tracker
 
-## Problem statement
-Students receive assignments, project work, practical files and test dates through WhatsApp groups, classroom notices, learning platforms and verbal instructions. Deadlines get missed because nothing brings them together. TaskNest is one small place to record academic tasks, see what is due next, and see what is overdue.
+A web-based task manager for college students. It keeps assignments, projects, practical files, presentations and tests in one place, with deadlines, priorities and progress tracking.
+
+## Problem Statement
+
+Students get academic work through WhatsApp groups, classroom notices, learning platforms and verbal instructions. With no single place to record it all, deadlines get missed and it is hard to tell what needs attention first.
+
+TaskNest solves one problem: **tracking academic tasks and their deadlines**. It is deliberately small and does not try to be a full college management system.
 
 ## Features
-- Sign up, log in, log out (Supabase Auth); dashboard, tasks and settings are protected
-- Add, edit, delete and complete tasks (title, description, subject, type, deadline, priority, status)
-- Dashboard: counts (Pending / In Progress / Completed / Overdue), next 5 upcoming tasks, recent tasks, weekly progress
-- Task list: search, filter by status / priority / subject / type, sort by deadline
-- Simple subjects used for organising and filtering
-- Overdue is computed automatically: `deadline < now AND status != Completed`
-- Loading, error and empty states; toast feedback; keyboard and screen-reader friendly
 
-## Technology stack
-Next.js 14 (App Router) · TypeScript · React · Tailwind CSS · Supabase (PostgreSQL + Auth + Row Level Security) · lucide-react · FastAPI (optional)
+**Accounts**
+- Sign up, log in and log out using Supabase Auth
+- Dashboard, task and settings pages are protected from logged-out users
 
-Recharts is not used: a plain progress bar covers the one visualisation needed.
+**Task management**
+- Add, edit, delete and complete tasks
+- Each task has a title, description, subject, type, deadline, priority and status
+- Task types: Assignment, Project, Practical, Presentation, Test, Other
+- Priority: Low, Medium, High
+- Status: Pending, In Progress, Completed
 
-## System architecture
-```
-Browser (Next.js pages, client components)
-   │  services/tasks.ts  (all database calls live here)
-   ▼
-Supabase  ── Auth (sessions in cookies)
-          ── PostgreSQL + RLS (users only see their own rows)
+**Dashboard**
+- Counts for Pending, In Progress, Completed and Overdue tasks
+- The next 5 upcoming tasks, ordered by deadline
+- Recently updated tasks
+- Weekly progress, for example "3 of 5 tasks completed this week"
 
-middleware.ts  → redirects logged-out users away from protected routes
-python/main.py → optional read-only FastAPI /summary, uses the caller's token
-```
-```
-app/         routes          components/  UI pieces      hooks/   useLoad, useUser
-services/    DB logic        lib/         utils, client  types/   shared types
-supabase/    schema.sql      python/      FastAPI service
-```
-There are no custom Next.js API routes: with Row Level Security the browser can talk to Supabase safely using the public anon key, which keeps the project small.
+**Task list**
+- Search by title
+- Filter by status, priority, subject and task type
+- Sort by earliest or latest deadline
 
-### Why Python exists
-It is a deliberately tiny, separate service (`GET /health`, `GET /summary`) showing how a non-JavaScript service can sit beside the app and reuse the same Supabase security rules. It does not duplicate the app backend, and the app works without it.
+**Other**
+- Simple subjects (such as DBMS or Data Structures) used to organise and filter tasks
+- Automatic overdue detection: a task is overdue when `deadline < now` and `status != Completed`
+- Loading, error and empty states, with toast feedback and form validation
+- Responsive layout: sidebar on desktop, collapsible menu and floating add button on mobile
+- Accessibility: semantic HTML, labelled form fields, keyboard navigation, visible focus states, and status shown in text as well as color
 
-## Database schema
-| Table | Columns |
+## Technology Stack
+
+| Layer | Technology |
 |---|---|
-| profiles | id (= auth user id), name, email, created_at |
-| subjects | id, user_id → auth.users, name, color, created_at (unique per user + name) |
-| tasks | id, user_id, subject_id → subjects (set null on delete), title, description, task_type, priority, status, deadline, created_at, updated_at, completed_at |
+| Frontend | Next.js 14 (App Router), React, TypeScript |
+| Styling | Tailwind CSS |
+| Icons | lucide-react |
+| Database | Supabase PostgreSQL |
+| Authentication | Supabase Auth |
+| Security | Supabase Row Level Security (RLS) |
+| Optional service | Python, FastAPI |
+| Hosting | Vercel (app), Supabase (database) |
 
-Allowed values — task_type: Assignment, Project, Practical, Presentation, Test, Other · priority: Low, Medium, High · status: Pending, In Progress, Completed. A trigger keeps `updated_at` and `completed_at` consistent with status.
+## System Architecture
 
-## How the design addresses project risks
-| Risk | Response |
+```
+Browser (Next.js pages and components)
+        |
+        |  services/tasks.ts  (all database calls in one place)
+        v
+Supabase
+  |- Auth: user sessions
+  |- PostgreSQL + Row Level Security: each user can only access their own rows
+
+middleware.ts    redirects logged-out users away from protected pages
+python/main.py   optional read-only FastAPI service for task summaries
+```
+
+The app has no custom API routes. Row Level Security lets the browser talk to Supabase directly with the public anon key, which keeps the codebase small. The service-role key is never used in the app.
+
+**Role of the Python service:** a small, separate FastAPI service (`/health` and `/summary`). It shows how a Python service can sit beside the web app and reuse the same Supabase security rules, because it forwards the user's own token. It does not duplicate the Next.js backend, and the app works without it.
+
+## Project Structure
+
+```
+app/          pages and routes
+components/   reusable UI components
+hooks/        data-loading and user hooks
+services/     database logic (Supabase queries)
+lib/          utilities and Supabase client
+types/        shared TypeScript types
+supabase/     SQL schema, RLS policies, sample data function
+python/       optional FastAPI service
+```
+
+## Database Schema
+
+| Table | Key columns |
 |---|---|
-| Scope creep | MVP limited to tasks, deadlines and subjects; no chat, attendance, notes or notifications |
-| Requirements ambiguity | Fixed fields and enumerated values for type, priority and status, enforced in TypeScript and in SQL `check` constraints |
-| Schedule slippage | One framework, one database, no custom API layer |
-| Poor maintainability | Separate `components/`, `services/`, `types/`, `hooks/`, `lib/`; no file over ~150 lines |
+| `profiles` | id, name, email, created_at |
+| `subjects` | id, user_id, name, color, created_at |
+| `tasks` | id, user_id, subject_id, title, description, task_type, priority, status, deadline, created_at, updated_at, completed_at |
 
-## Future scope
-Teacher task sharing · Email reminders · Calendar integration (not implemented).
+- Foreign keys link subjects and tasks to the user, and tasks to subjects
+- `check` constraints restrict task type, priority and status to the allowed values
+- A database trigger keeps `updated_at` and `completed_at` consistent with the task status
+- RLS policies allow a user to select, insert, update and delete only their own rows
+
+## Software Engineering Considerations
+
+| Risk | How the project addresses it |
+|---|---|
+| Scope creep | The MVP is limited to tasks, deadlines and subjects. There is no chat, attendance, notes or notification system. |
+| Requirements ambiguity | Fixed fields and enumerated values for type, priority and status, enforced in both TypeScript and SQL. |
+| Schedule slippage | One framework, one database and no custom API layer keep the architecture simple and modular. |
+| Poor maintainability | UI components, database services, types, hooks and utilities live in separate folders. |
+
+## Future Scope
+
+- Teacher task sharing
+- Email reminders
+- Calendar integration
+
+These are not implemented in the current version.
+
