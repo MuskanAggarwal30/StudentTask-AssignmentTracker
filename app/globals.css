@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  body { @apply bg-paper text-ink antialiased; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  :focus-visible { outline: 2px solid #3b4a9e; outline-offset: 2px; }
+}
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded border border-line bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50 disabled:opacity-50; }
+  .btn-primary { @apply border-accent bg-accent text-white hover:bg-accent/90; }
+  .btn-danger { @apply text-red-700 hover:bg-red-50; }
+  .input { @apply w-full rounded border border-line bg-white px-3 py-2 text-sm; }
+  .label { @apply mb-1 block text-sm font-medium; }
+}
