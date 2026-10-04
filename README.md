@@ -47,59 +47,6 @@ It is a deliberately tiny, separate service (`GET /health`, `GET /summary`) show
 
 Allowed values — task_type: Assignment, Project, Practical, Presentation, Test, Other · priority: Low, Medium, High · status: Pending, In Progress, Completed. A trigger keeps `updated_at` and `completed_at` consistent with status.
 
-## Installation
-1. Install Node.js 18.17 or newer.
-2. `npm install`
-
-## Environment variables
-```
-cp .env.example .env.local
-```
-Fill in `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Supabase → Project Settings → API). Never put the service-role key in this app.
-
-## Supabase setup
-1. Create a project at supabase.com.
-2. **SQL Editor** → new query → paste all of `supabase/schema.sql` → Run. This creates tables, triggers, RLS policies and the sample-data function.
-3. **Authentication → Providers → Email**: for easiest testing, turn off "Confirm email". If left on, new users must confirm by email before logging in.
-4. **Authentication → URL Configuration**: add `http://localhost:3000` (and your Vercel URL later).
-
-## Running locally
-```
-npm run dev      # http://localhost:3000
-```
-Sign up, then open **Settings → Load sample data** to get 4 subjects and 5 tasks.
-
-## Build
-```
-npm run build && npm start
-```
-
-## Deployment (Vercel)
-1. Push the project to GitHub.
-2. Vercel → Add New Project → import the repo (framework: Next.js is detected).
-3. Add the two environment variables above → Deploy.
-4. Add the Vercel URL to Supabase → Authentication → URL Configuration.
-
-## Python service
-```
-cd python
-python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-export SUPABASE_URL=https://xxxx.supabase.co SUPABASE_ANON_KEY=your-anon-key
-uvicorn main:app --reload --port 8000
-```
-- `GET /health` → `{"status":"ok"}`
-- `GET /summary` with header `Authorization: Bearer <user access token>` → task counts and completion percent
-
-To deploy it, use any Python host (Render, Railway, Fly.io) with start command `uvicorn main:app --host 0.0.0.0 --port $PORT` and the two env vars. It is optional; skip it if you only deploy the web app.
-
-## Troubleshooting
-- **"Supabase is not configured"** — `.env.local` is missing or the dev server was not restarted after editing it.
-- **Signup says to check email** — email confirmation is on; confirm or disable it (Supabase setup step 3).
-- **Tasks fail to load / save** — `schema.sql` was not run, or ran partly. Re-run in a fresh project.
-- **Redirect loop to /login** — wrong URL or anon key; sign in again after fixing.
-- **"Load sample data" fails** — you must be logged in, and `seed_demo_data` must exist (part of `schema.sql`).
-
 ## How the design addresses project risks
 | Risk | Response |
 |---|---|
